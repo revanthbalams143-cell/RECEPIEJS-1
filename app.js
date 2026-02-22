@@ -68,6 +68,12 @@ const recipes = [
 
 // DOM Selection - Get the container where recipes will be displayed
 const recipeContainer = document.querySelector('#recipe-container');
+const filterButtons = document.querySelectorAll('.filter-btn');
+const sortButtons = document.querySelectorAll('.sort-btn');
+
+// State management
+let currentFilter = 'all';
+let currentSort = 'none';
 
 // Function to create HTML for a single recipe card
 const createRecipeCard = (recipe) => {
@@ -92,5 +98,115 @@ const renderRecipes = (recipesToRender) => {
     recipeContainer.innerHTML = recipeCardsHTML;
 };
 
-// Initialize: Render all recipes when page loads
-renderRecipes(recipes);
+// Pure filter functions
+const filterByDifficulty = (recipesToFilter, difficulty) => {
+  return recipesToFilter.filter(recipe => recipe.difficulty === difficulty);
+};
+
+const filterByTime = (recipesToFilter, maxTime) => {
+  return recipesToFilter.filter(recipe => recipe.time <= maxTime);
+};
+
+const applyFilter = (recipesToFilter, filterType) => {
+  switch (filterType) {
+    case 'easy':
+      return filterByDifficulty(recipesToFilter, 'easy');
+    case 'medium':
+      return filterByDifficulty(recipesToFilter, 'medium');
+    case 'hard':
+      return filterByDifficulty(recipesToFilter, 'hard');
+    case 'quick':
+      return filterByTime(recipesToFilter, 30);
+    case 'all':
+    default:
+      return recipesToFilter;
+  }
+};
+
+// Pure sort functions
+const sortByName = (recipesToSort) => {
+  return [...recipesToSort].sort((a, b) => a.title.localeCompare(b.title));
+};
+
+const sortByTime = (recipesToSort) => {
+  return [...recipesToSort].sort((a, b) => a.time - b.time);
+};
+
+const applySort = (recipesToSort, sortType) => {
+  switch (sortType) {
+    case 'name':
+      return sortByName(recipesToSort);
+    case 'time':
+      return sortByTime(recipesToSort);
+    case 'none':
+    default:
+      return recipesToSort;
+  }
+};
+
+const applyTransformations = (recipeList, transformations) => {
+  return transformations.reduce((acc, transform) => transform(acc), recipeList);
+};
+
+// Main update function
+const updateDisplay = () => {
+  const recipesToDisplay = applyTransformations(recipes, [
+    (list) => applyFilter(list, currentFilter),
+    (list) => applySort(list, currentSort)
+  ]);
+
+  renderRecipes(recipesToDisplay);
+  console.log(`Displaying ${recipesToDisplay.length} recipes (Filter: ${currentFilter}, Sort: ${currentSort})`);
+};
+
+// UI helper
+const updateActiveButtons = () => {
+  filterButtons.forEach(btn => {
+    const filterType = btn.dataset.filter;
+    if (filterType === currentFilter) {
+      btn.classList.add('active');
+    } else {
+      btn.classList.remove('active');
+    }
+  });
+
+  sortButtons.forEach(btn => {
+    const sortType = btn.dataset.sort;
+    if (sortType === currentSort) {
+      btn.classList.add('active');
+    } else {
+      btn.classList.remove('active');
+    }
+  });
+};
+
+// Event handlers
+const handleFilterClick = (event) => {
+  const filterType = event.target.dataset.filter;
+  currentFilter = filterType;
+  updateActiveButtons();
+  updateDisplay();
+};
+
+const handleSortClick = (event) => {
+  const sortType = event.target.dataset.sort;
+  currentSort = sortType;
+  updateActiveButtons();
+  updateDisplay();
+};
+
+// Event listeners
+const setupEventListeners = () => {
+  filterButtons.forEach(btn => {
+    btn.addEventListener('click', handleFilterClick);
+  });
+
+  sortButtons.forEach(btn => {
+    btn.addEventListener('click', handleSortClick);
+  });
+};
+
+// Initialize
+setupEventListeners();
+updateActiveButtons();
+updateDisplay();
